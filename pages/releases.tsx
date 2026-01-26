@@ -32,6 +32,7 @@ import { showToast } from '../components/toast';
 interface Release {
   path: string;
   runtimeVersion: string;
+  platform: string;
   timestamp: string;
   size: number;
   commitHash: string | null;
@@ -91,6 +92,7 @@ export default function ReleasesPage() {
                   <Tr>
                     <Th>Name</Th>
                     <Th>Runtime Version</Th>
+                    <Th>Platform</Th>
                     <Th>Commit Hash</Th>
                     <Th>Commit Message</Th>
                     <Th>Timestamp (UTC)</Th>
@@ -107,6 +109,18 @@ export default function ReleasesPage() {
                       <Tr key={index}>
                         <Td>{release.path}</Td>
                         <Td>{release.runtimeVersion}</Td>
+                        <Td>
+                          <Tag
+                            colorScheme={
+                              release.platform === 'ios'
+                                ? 'blue'
+                                : release.platform === 'android'
+                                  ? 'green'
+                                  : 'gray'
+                            }>
+                            {release.platform.toUpperCase()}
+                          </Tag>
+                        </Td>
                         <Td>
                           <Tooltip label={release.commitHash}>
                             <Text isTruncated w="10rem">
@@ -185,6 +199,7 @@ export default function ReleasesPage() {
                                             body: JSON.stringify({
                                               path: selectedRelease?.path,
                                               runtimeVersion: selectedRelease?.runtimeVersion,
+                                              platform: selectedRelease?.platform,
                                               commitHash: selectedRelease?.commitHash,
                                               commitMessage: selectedRelease?.commitMessage,
                                             }),
