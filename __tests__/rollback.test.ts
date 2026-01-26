@@ -32,10 +32,18 @@ describe('Rollback API', () => {
   it('should handle rollback successfully', async () => {
     const mockStorage = {
       copyFile: jest.fn().mockResolvedValue(true),
+      downloadFile: jest.fn().mockResolvedValue(Buffer.from('mock zip content')),
     };
 
     const mockDatabase = {
       createRelease: jest.fn().mockResolvedValue(true),
+      getReleaseByPath: jest.fn().mockResolvedValue({
+        id: 'release-id',
+        path: 'updates/1.0.0/ios/old.zip',
+        runtimeVersion: '1.0.0',
+        platform: 'ios',
+        updateId: 'test-update-id',
+      }),
     };
 
     (StorageFactory.getStorage as jest.Mock).mockReturnValue(mockStorage);
