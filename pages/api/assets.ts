@@ -28,7 +28,8 @@ export default async function assetsEndpoint(req: NextApiRequest, res: NextApiRe
 
   try {
     const updateBundlePath = await UpdateHelper.getLatestUpdateBundlePathForRuntimeVersionAsync(
-      runtimeVersion as string
+      runtimeVersion as string,
+      platform as string
     );
     const zip = await ZipHelper.getZipFromStorage(updateBundlePath);
 

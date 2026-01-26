@@ -59,6 +59,7 @@ describe('Manifest API', () => {
     const mockRelease: Release = {
       id: 'release-id',
       runtimeVersion: '1.0.0',
+      platform: 'ios',
       path: 'path/to/update.zip',
       timestamp: '2024-03-20T00:00:00Z',
       commitHash: 'abc123',
@@ -112,6 +113,7 @@ describe('Manifest API', () => {
     const mockRelease: Release = {
       id: 'release-id',
       runtimeVersion: '1.0.0',
+      platform: 'ios',
       path: 'path/to/update.zip',
       timestamp: '2024-03-20T00:00:00Z',
       commitHash: 'abc123',
