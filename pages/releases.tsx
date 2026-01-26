@@ -115,8 +115,8 @@ export default function ReleasesPage() {
                               release.platform === 'ios'
                                 ? 'blue'
                                 : release.platform === 'android'
-                                  ? 'green'
-                                  : 'gray'
+                                ? 'green'
+                                : 'gray'
                             }>
                             {release.platform.toUpperCase()}
                           </Tag>
