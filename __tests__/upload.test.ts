@@ -35,6 +35,7 @@ describe('Upload API', () => {
         {
           uploadKey: [process.env.UPLOAD_KEY],
           runtimeVersion: ['1.0.0'],
+          platform: ['ios'],
           commitHash: ['abc123'],
           commitMessage: ['Test commit message'],
         },
@@ -65,7 +66,7 @@ describe('Upload API', () => {
 
     // Mock storage and database
     const mockStorage = {
-      uploadFile: jest.fn().mockResolvedValue('updates/1.0.0/timestamp.zip'),
+      uploadFile: jest.fn().mockResolvedValue('updates/1.0.0/ios/timestamp.zip'),
     };
     const mockDatabase = {
       createRelease: jest.fn().mockResolvedValue(true),
@@ -84,8 +85,9 @@ describe('Upload API', () => {
     // Verify all mocks were called correctly
     expect(mockStorage.uploadFile).toHaveBeenCalled();
     expect(mockDatabase.createRelease).toHaveBeenCalledWith({
-      path: 'updates/1.0.0/timestamp.zip',
+      path: 'updates/1.0.0/ios/timestamp.zip',
       runtimeVersion: '1.0.0',
+      platform: 'ios',
       timestamp: expect.any(String),
       commitHash: 'abc123',
       commitMessage: 'Test commit message',

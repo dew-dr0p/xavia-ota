@@ -21,7 +21,10 @@ describe('Releases API', () => {
 
   it('should return releases successfully', async () => {
     const mockStorage = {
-      listDirectories: jest.fn().mockResolvedValue(['1.0.0']),
+      listDirectories: jest
+        .fn()
+        .mockResolvedValueOnce(['1.0.0']) // First call for runtime versions
+        .mockResolvedValueOnce(['ios']), // Second call for platforms
       listFiles: jest.fn().mockResolvedValue([
         {
           name: 'update.zip',
@@ -34,8 +37,9 @@ describe('Releases API', () => {
     const mockDatabase = {
       listReleases: jest.fn().mockResolvedValue([
         {
-          path: 'updates/1.0.0/update.zip',
+          path: 'updates/1.0.0/ios/update.zip',
           commitHash: 'abc123',
+          commitMessage: 'Test commit',
         },
       ]),
     };

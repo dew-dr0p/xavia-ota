@@ -11,27 +11,33 @@ export default async function releasesHandler(req: NextApiRequest, res: NextApiR
 
   try {
     const storage = StorageFactory.getStorage();
-    const directories = await storage.listDirectories('updates/');
+    const runtimeVersionDirs = await storage.listDirectories('updates/');
 
     const releasesWithCommitHash = await DatabaseFactory.getDatabase().listReleases();
 
     const releases = [];
-    for (const directory of directories) {
-      const folderPath = `updates/${directory}`;
-      const files = await storage.listFiles(folderPath);
-      const runtimeVersion = directory;
+    for (const runtimeVersion of runtimeVersionDirs) {
+      const platformDirs = await storage.listDirectories(`updates/${runtimeVersion}/`);
 
-      for (const file of files) {
-        const release = releasesWithCommitHash.find((r) => r.path === `${folderPath}/${file.name}`);
-        const commitHash = release ? release.commitHash : null;
-        releases.push({
-          path: release?.path || `${folderPath}/${file.name}`,
-          runtimeVersion,
-          timestamp: file.created_at,
-          size: file.metadata.size,
-          commitHash,
-          commitMessage: release?.commitMessage,
-        });
+      for (const platform of platformDirs) {
+        const folderPath = `updates/${runtimeVersion}/${platform}`;
+        const files = await storage.listFiles(folderPath);
+
+        for (const file of files) {
+          const release = releasesWithCommitHash.find(
+            (r) => r.path === `${folderPath}/${file.name}`
+          );
+          const commitHash = release ? release.commitHash : null;
+          releases.push({
+            path: release?.path || `${folderPath}/${file.name}`,
+            runtimeVersion,
+            platform,
+            timestamp: file.created_at,
+            size: file.metadata.size,
+            commitHash,
+            commitMessage: release?.commitMessage,
+          });
+        }
       }
     }
 

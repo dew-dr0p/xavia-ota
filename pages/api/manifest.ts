@@ -28,6 +28,10 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     apiVersion: req.headers['expo-api-version'],
     currentUpdateId: req.headers['expo-current-update-id'],
   });
+  logger.log('info', {
+    headers: JSON.stringify(req.headers),
+  });
+  console.log(req.headers);
 
   const protocolVersionMaybeArray = req.headers['expo-protocol-version'];
   if (protocolVersionMaybeArray && Array.isArray(protocolVersionMaybeArray)) {
@@ -59,7 +63,10 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
   }
 
   const database = DatabaseFactory.getDatabase();
-  const releaseRecord = await database.getLatestReleaseRecordForRuntimeVersion(runtimeVersion);
+  const releaseRecord = await database.getLatestReleaseRecordForRuntimeVersion(
+    runtimeVersion,
+    platform
+  );
 
   if (releaseRecord) {
     const updateId = releaseRecord.updateId;
@@ -68,6 +75,7 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
     if (currentUpdateId === updateId) {
       logger.info('User is already running the latest release. Returning NoUpdateAvailable.', {
         runtimeVersion,
+        platform,
       });
       await putNoUpdateAvailableInResponseAsync(req, res, protocolVersion);
       return;
@@ -77,7 +85,8 @@ export default async function manifestEndpoint(req: NextApiRequest, res: NextApi
   let updateBundlePath: string;
   try {
     updateBundlePath = await UpdateHelper.getLatestUpdateBundlePathForRuntimeVersionAsync(
-      runtimeVersion
+      runtimeVersion,
+      platform
     );
   } catch (error: any) {
     if (error instanceof NoUpdateAvailableError) {

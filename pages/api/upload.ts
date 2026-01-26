@@ -29,11 +29,19 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const uploadKey = fields.uploadKey?.[0] || null;
     const file = files.file?.[0];
     const runtimeVersion = fields.runtimeVersion?.[0];
+    const platform = fields.platform?.[0];
     const commitHash = fields.commitHash?.[0];
     const commitMessage = fields.commitMessage?.[0] || 'No message provided';
 
-    if (!uploadKey || !file || !runtimeVersion || !commitHash) {
-      res.status(400).json({ error: 'Missing upload key, file, runtime version or commit hash' });
+    if (!uploadKey || !file || !runtimeVersion || !commitHash || !platform) {
+      res.status(400).json({
+        error: 'Missing upload key, file, runtime version, platform or commit hash',
+      });
+      return;
+    }
+
+    if (platform !== 'ios' && platform !== 'android' && platform !== 'all') {
+      res.status(400).json({ error: 'Platform must be either ios, android, or all' });
       return;
     }
 
@@ -44,7 +52,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
 
     const storage = StorageFactory.getStorage();
     const timestamp = moment().utc().format('YYYYMMDDHHmmss');
-    const updatePath = `updates/${runtimeVersion}`;
+    const updatePath = `updates/${runtimeVersion}/${platform}`;
 
     // Store the zipped file as is
     const zipContent = fs.readFileSync(file.filepath);
@@ -59,6 +67,7 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     await DatabaseFactory.getDatabase().createRelease({
       path,
       runtimeVersion,
+      platform,
       timestamp: moment().utc().toString(),
       commitHash,
       commitMessage,

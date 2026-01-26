@@ -15,20 +15,32 @@ export class PostgresDatabase implements DatabaseInterface {
       port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
     });
   }
-  async getLatestReleaseRecordForRuntimeVersion(runtimeVersion: string): Promise<Release | null> {
-    const query = `
-      SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
-      FROM ${Tables.RELEASES} WHERE runtime_version = $1
-      ORDER BY timestamp DESC
-      LIMIT 1
-    `;
+  async getLatestReleaseRecordForRuntimeVersion(
+    runtimeVersion: string,
+    platform: string
+  ): Promise<Release | null> {
+    // First try platform-specific, then fall back to "all"
+    const platformsToCheck = platform === 'all' ? ['all'] : [platform, 'all'];
 
-    const { rows } = await this.pool.query(query, [runtimeVersion]);
-    return rows[0] || null;
+    for (const checkPlatform of platformsToCheck) {
+      const query = `
+        SELECT id, runtime_version as "runtimeVersion", platform, path, timestamp, commit_hash as "commitHash", update_id as "updateId"
+        FROM ${Tables.RELEASES} WHERE runtime_version = $1 AND platform = $2
+        ORDER BY timestamp DESC
+        LIMIT 1
+      `;
+
+      const { rows } = await this.pool.query(query, [runtimeVersion, checkPlatform]);
+      if (rows.length > 0) {
+        return rows[0];
+      }
+    }
+
+    return null;
   }
   async getReleaseByPath(path: string): Promise<Release | null> {
     const query = `
-      SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
+      SELECT id, runtime_version as "runtimeVersion", platform, path, timestamp, commit_hash as "commitHash", update_id as "updateId"
       FROM ${Tables.RELEASES} WHERE path = $1
     `;
     const { rows } = await this.pool.query(query, [path]);
@@ -75,13 +87,14 @@ export class PostgresDatabase implements DatabaseInterface {
 
   async createRelease(release: Omit<Release, 'id'>): Promise<Release> {
     const query = `
-      INSERT INTO ${Tables.RELEASES} (runtime_version, path, timestamp, commit_hash, commit_message, update_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash", update_id as "updateId"
+      INSERT INTO ${Tables.RELEASES} (runtime_version, platform, path, timestamp, commit_hash, commit_message, update_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, runtime_version as "runtimeVersion", platform, path, timestamp, commit_hash as "commitHash", update_id as "updateId"
     `;
 
     const values = [
       release.runtimeVersion,
+      release.platform,
       release.path,
       release.timestamp,
       release.commitHash,
@@ -94,7 +107,7 @@ export class PostgresDatabase implements DatabaseInterface {
 
   async getRelease(id: string): Promise<Release | null> {
     const query = `
-      SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash"
+      SELECT id, runtime_version as "runtimeVersion", platform, path, timestamp, commit_hash as "commitHash", update_id as "updateId"
       FROM ${Tables.RELEASES} WHERE id = $1
     `;
 
@@ -104,7 +117,7 @@ export class PostgresDatabase implements DatabaseInterface {
 
   async listReleases(): Promise<Release[]> {
     const query = `
-      SELECT id, runtime_version as "runtimeVersion", path, timestamp, commit_hash as "commitHash", commit_message as "commitMessage"
+      SELECT id, runtime_version as "runtimeVersion", platform, path, timestamp, commit_hash as "commitHash", commit_message as "commitMessage", update_id as "updateId"
       FROM ${Tables.RELEASES}
       ORDER BY timestamp DESC
     `;

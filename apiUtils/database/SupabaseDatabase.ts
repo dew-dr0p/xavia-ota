@@ -17,27 +17,40 @@ export class SupabaseDatabase implements DatabaseInterface {
     this.supabase = createClient(supabaseUrl, supabaseKey);
   }
 
-  async getLatestReleaseRecordForRuntimeVersion(runtimeVersion: string): Promise<Release | null> {
-    const { data, error } = await this.supabase
-      .from(Tables.RELEASES)
-      .select()
-      .eq('runtime_version', runtimeVersion)
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single();
+  async getLatestReleaseRecordForRuntimeVersion(
+    runtimeVersion: string,
+    platform: string
+  ): Promise<Release | null> {
+    // First try platform-specific, then fall back to "all"
+    const platformsToCheck = platform === 'all' ? ['all'] : [platform, 'all'];
 
-    if (error) throw new Error(error.message);
+    for (const checkPlatform of platformsToCheck) {
+      const { data, error } = await this.supabase
+        .from(Tables.RELEASES)
+        .select()
+        .eq('runtime_version', runtimeVersion)
+        .eq('platform', checkPlatform)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (data) {
-      return {
-        id: data.id,
-        runtimeVersion: data.runtime_version,
-        path: data.path,
-        timestamp: data.timestamp,
-        commitHash: data.commit_hash,
-        commitMessage: data.commit_message,
-        updateId: data.update_id,
-      };
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 is "not found" which is fine
+        throw new Error(error.message);
+      }
+
+      if (data) {
+        return {
+          id: data.id,
+          runtimeVersion: data.runtime_version,
+          platform: data.platform,
+          path: data.path,
+          timestamp: data.timestamp,
+          commitHash: data.commit_hash,
+          commitMessage: data.commit_message,
+          updateId: data.update_id,
+        };
+      }
     }
 
     return null;
@@ -52,7 +65,20 @@ export class SupabaseDatabase implements DatabaseInterface {
 
     if (error) throw new Error(error.message);
 
-    return data || null;
+    if (data) {
+      return {
+        id: data.id,
+        runtimeVersion: data.runtime_version,
+        platform: data.platform,
+        path: data.path,
+        timestamp: data.timestamp,
+        commitHash: data.commit_hash,
+        commitMessage: data.commit_message,
+        updateId: data.update_id,
+      };
+    }
+
+    return null;
   }
 
   async getReleaseTrackingMetricsForAllReleases(): Promise<TrackingMetrics[]> {
@@ -125,6 +151,7 @@ export class SupabaseDatabase implements DatabaseInterface {
       .insert({
         path: release.path,
         runtime_version: release.runtimeVersion,
+        platform: release.platform,
         timestamp: release.timestamp,
         commit_hash: release.commitHash,
         commit_message: release.commitMessage,
@@ -134,7 +161,16 @@ export class SupabaseDatabase implements DatabaseInterface {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      id: data.id,
+      runtimeVersion: data.runtime_version,
+      platform: data.platform,
+      path: data.path,
+      timestamp: data.timestamp,
+      commitHash: data.commit_hash,
+      commitMessage: data.commit_message,
+      updateId: data.update_id,
+    };
   }
 
   async getRelease(id: string): Promise<Release | null> {
@@ -150,9 +186,11 @@ export class SupabaseDatabase implements DatabaseInterface {
       id: data.id,
       path: data.path,
       runtimeVersion: data.runtime_version,
+      platform: data.platform,
       timestamp: data.timestamp,
       commitHash: data.commit_hash,
       commitMessage: data.commit_message,
+      updateId: data.update_id,
     };
   }
 
@@ -167,10 +205,12 @@ export class SupabaseDatabase implements DatabaseInterface {
       id: release.id,
       path: release.path,
       runtimeVersion: release.runtime_version,
+      platform: release.platform,
       timestamp: release.timestamp,
       size: release.size,
       commitHash: release.commit_hash,
       commitMessage: release.commit_message,
+      updateId: release.update_id,
     }));
   }
 }

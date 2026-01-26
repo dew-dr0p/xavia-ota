@@ -25,24 +25,28 @@ export type GetAssetMetadataArg =
 
 export class UpdateHelper {
   static async getLatestUpdateBundlePathForRuntimeVersionAsync(
-    runtimeVersion: string
+    runtimeVersion: string,
+    platform: string
   ): Promise<string> {
     const storage = StorageFactory.getStorage();
-    const updatesDirectoryForRuntimeVersion = `updates/${runtimeVersion}`;
 
-    if (!(await storage.fileExists(updatesDirectoryForRuntimeVersion))) {
-      throw new NoUpdateAvailableError();
+    const platformsToCheck = platform === 'all' ? ['all'] : [platform, 'all'];
+
+    for (const checkPlatform of platformsToCheck) {
+      const updatesDirectoryForRuntimeVersion = `updates/${runtimeVersion}/${checkPlatform}`;
+
+      if (await storage.fileExists(updatesDirectoryForRuntimeVersion)) {
+        const zipFiles = (await storage.listFiles(updatesDirectoryForRuntimeVersion))
+          .filter((file) => file.name.endsWith('.zip'))
+          .sort((a, b) => parseInt(b.name.split('.')[0], 10) - parseInt(a.name.split('.')[0], 10));
+
+        if (zipFiles.length > 0) {
+          return `${updatesDirectoryForRuntimeVersion}/${zipFiles[0].name.replace('.zip', '')}`;
+        }
+      }
     }
 
-    const zipFiles = (await storage.listFiles(updatesDirectoryForRuntimeVersion))
-      .filter((file) => file.name.endsWith('.zip'))
-      .sort((a, b) => parseInt(b.name.split('.')[0], 10) - parseInt(a.name.split('.')[0], 10));
-
-    if (!zipFiles.length) {
-      throw new Error(`No updates found for runtime version: ${runtimeVersion}`);
-    }
-
-    return `${updatesDirectoryForRuntimeVersion}/${zipFiles[0].name.replace('.zip', '')}`;
+    throw new NoUpdateAvailableError();
   }
 
   static async getAssetMetadataAsync(arg: GetAssetMetadataArg) {

@@ -46,9 +46,11 @@ describe('Rollback API', () => {
     const { req, res } = createMocks({
       method: 'POST',
       body: {
-        path: 'updates/1.0.0/old.zip',
+        path: 'updates/1.0.0/ios/old.zip',
         runtimeVersion: '1.0.0',
+        platform: 'ios',
         commitHash: 'abc123',
+        commitMessage: 'Test commit',
       },
     });
 

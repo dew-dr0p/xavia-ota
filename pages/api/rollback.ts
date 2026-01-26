@@ -10,7 +10,7 @@ export default async function rollbackHandler(req: NextApiRequest, res: NextApiR
     return;
   }
 
-  const { path, runtimeVersion, commitHash, commitMessage } = req.body;
+  const { path, runtimeVersion, platform, commitHash, commitMessage } = req.body;
 
   if (!path) {
     res.status(400).json({ error: 'Missing path' });
@@ -19,6 +19,16 @@ export default async function rollbackHandler(req: NextApiRequest, res: NextApiR
 
   if (!runtimeVersion) {
     res.status(400).json({ error: 'Missing runtimeVersion' });
+    return;
+  }
+
+  if (!platform) {
+    res.status(400).json({ error: 'Missing platform' });
+    return;
+  }
+
+  if (platform !== 'ios' && platform !== 'android' && platform !== 'all') {
+    res.status(400).json({ error: 'Platform must be either ios, android, or all' });
     return;
   }
 
@@ -31,13 +41,14 @@ export default async function rollbackHandler(req: NextApiRequest, res: NextApiR
     const storage = StorageFactory.getStorage();
 
     const timestamp = moment().utc().format('YYYYMMDDHHmmss');
-    const newPath = `updates/${runtimeVersion}/${timestamp}.zip`;
+    const newPath = `updates/${runtimeVersion}/${platform}/${timestamp}.zip`;
 
     await storage.copyFile(path, newPath);
 
     await DatabaseFactory.getDatabase().createRelease({
       path: newPath,
       runtimeVersion,
+      platform,
       timestamp: moment().utc().toString(),
       commitHash,
       commitMessage,
