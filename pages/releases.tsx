@@ -258,12 +258,7 @@ export default function ReleasesPage() {
                 </AlertDialogHeader>
                 <AlertDialogBody>
                   Are you sure you want to rollback to this release?
-                  <Tag
-                    size="lg"
-                    colorScheme="green"
-                    mt={4}
-                    padding={4}
-                    className="w-full">
+                  <Tag size="lg" colorScheme="green" mt={4} padding={4} className="w-full">
                     <Text fontSize="sm">Commit Hash: {selectedRelease?.commitHash}</Text>
                   </Tag>
                   <Tag size="lg" colorScheme="orange" mt={4} padding={4}>

@@ -226,9 +226,7 @@ export class SupabaseDatabase implements DatabaseInterface {
   }
 
   async getPerReleaseDownloadCounts(): Promise<ReleaseDownloadCount[]> {
-    const { data, error } = await this.supabase
-      .from(Tables.RELEASES_TRACKING)
-      .select('release_id');
+    const { data, error } = await this.supabase.from(Tables.RELEASES_TRACKING).select('release_id');
 
     if (error) throw new Error(error.message);
 

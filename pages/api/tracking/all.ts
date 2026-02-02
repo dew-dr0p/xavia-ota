@@ -35,7 +35,9 @@ export default async function allTrackingHandler(req: NextApiRequest, res: NextA
     const byTimestampDesc = [...releases].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-    const latestIosRelease = byTimestampDesc.find((r) => r.platform === 'ios' || r.platform === 'all');
+    const latestIosRelease = byTimestampDesc.find(
+      (r) => r.platform === 'ios' || r.platform === 'all'
+    );
     const latestAndroidRelease = byTimestampDesc.find(
       (r) => r.platform === 'android' || r.platform === 'all'
     );
