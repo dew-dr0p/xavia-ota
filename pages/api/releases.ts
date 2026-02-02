@@ -5,7 +5,11 @@ import { StorageFactory } from '../../apiUtils/storage/StorageFactory';
 
 export default async function releasesHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'DELETE') {
-    const { path: releasePath } = typeof req.body === 'object' && req.body !== null ? req.body : {};
+    const releasePath =
+      typeof req.body === 'object' && req.body !== null
+        ? (req.body as { path?: string }).path
+        : undefined;
+
     if (!releasePath || typeof releasePath !== 'string') {
       res.status(400).json({ error: 'Missing or invalid path' });
       return;
