@@ -21,11 +21,18 @@ export interface TrackingMetrics {
   count: number;
 }
 
+export interface ReleaseDownloadCount {
+  releaseId: string;
+  count: number;
+}
+
 export interface DatabaseInterface {
   createRelease(release: Omit<Release, 'id'>): Promise<Release>;
   getRelease(id: string): Promise<Release | null>;
   getReleaseByPath(path: string): Promise<Release | null>;
   listReleases(): Promise<Release[]>;
+  deleteRelease(id: string): Promise<void>;
+  getPerReleaseDownloadCounts(): Promise<ReleaseDownloadCount[]>;
   createTracking(tracking: Omit<Tracking, 'id'>): Promise<Tracking>;
   getReleaseTrackingMetrics(releaseId: string): Promise<TrackingMetrics[]>;
   getReleaseTrackingMetricsForAllReleases(): Promise<TrackingMetrics[]>;

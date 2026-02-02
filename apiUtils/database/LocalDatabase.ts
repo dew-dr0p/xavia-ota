@@ -1,6 +1,12 @@
 import { Pool } from 'pg';
 
-import { DatabaseInterface, Release, Tracking, TrackingMetrics } from './DatabaseInterface';
+import {
+  DatabaseInterface,
+  Release,
+  ReleaseDownloadCount,
+  Tracking,
+  TrackingMetrics,
+} from './DatabaseInterface';
 import { Tables } from './DatabaseFactory';
 
 export class PostgresDatabase implements DatabaseInterface {
@@ -83,6 +89,23 @@ export class PostgresDatabase implements DatabaseInterface {
       platform: row.platform,
       count: Number(row.count),
     }));
+  }
+
+  async getPerReleaseDownloadCounts(): Promise<ReleaseDownloadCount[]> {
+    const query = `
+      SELECT release_id as "releaseId", COUNT(*) as count
+      FROM ${Tables.RELEASES_TRACKING}
+      GROUP BY release_id
+    `;
+    const { rows } = await this.pool.query(query);
+    return rows.map((row) => ({
+      releaseId: row.releaseId,
+      count: Number(row.count),
+    }));
+  }
+
+  async deleteRelease(id: string): Promise<void> {
+    await this.pool.query(`DELETE FROM ${Tables.RELEASES} WHERE id = $1`, [id]);
   }
 
   async createRelease(release: Omit<Release, 'id'>): Promise<Release> {

@@ -94,6 +94,11 @@ export class LocalStorage implements StorageInterface {
     await fs.copyFile(sourceFullPath, destFullPath);
   }
 
+  async deleteFile(filePath: string): Promise<void> {
+    const fullPath = path.join(this.baseDir, filePath);
+    await fs.unlink(fullPath);
+  }
+
   private getMimeType(ext: string): string {
     const mimeTypes: { [key: string]: string } = {
       '.js': 'application/javascript',

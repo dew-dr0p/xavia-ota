@@ -67,6 +67,10 @@ export class GCSStorage implements StorageInterface {
     return files.some((file: any) => file.name.includes(requestedFile));
   }
 
+  async deleteFile(path: string): Promise<void> {
+    await this.storage.bucket(this.bucketName).file(path).delete();
+  }
+
   async listFiles(directory: string): Promise<
     {
       name: string;

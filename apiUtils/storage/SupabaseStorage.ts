@@ -47,6 +47,11 @@ export class SupabaseStorage implements StorageInterface {
     return Buffer.from(await data.arrayBuffer());
   }
 
+  async deleteFile(path: string): Promise<void> {
+    const { error } = await this.supabase.storage.from(this.bucketName).remove([path]);
+    if (error) throw error;
+  }
+
   async fileExists(path: string): Promise<boolean> {
     const { data, error } = await this.supabase.storage
       .from(this.bucketName)

@@ -18,6 +18,8 @@ Object {
     Object {
       "commitHash": "abc123",
       "commitMessage": "Test commit",
+      "downloadCount": 5,
+      "id": "release-uuid-1",
       "path": "updates/1.0.0/ios/update.zip",
       "platform": "ios",
       "runtimeVersion": "1.0.0",

@@ -5,6 +5,7 @@ import {
   ListObjectsV2Command,
   PutObjectCommand,
   CopyObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { StorageInterface } from './StorageInterface';
 
@@ -120,6 +121,14 @@ export class S3Storage implements StorageInterface {
     });
     await this.client.send(uploadCommand);
     return path;
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: this.bucketName,
+      Key: path,
+    });
+    await this.client.send(deleteCommand);
   }
 
   private getMimeType(ext: string): string {

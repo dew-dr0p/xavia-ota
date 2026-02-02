@@ -24,12 +24,14 @@ import {
 import moment from 'moment';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SlRefresh } from 'react-icons/sl';
+import { MdDelete } from 'react-icons/md';
 
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { showToast } from '../components/toast';
 
 interface Release {
+  id: string | null;
   path: string;
   runtimeVersion: string;
   platform: string;
@@ -37,6 +39,7 @@ interface Release {
   size: number;
   commitHash: string | null;
   commitMessage: string | null;
+  downloadCount?: number;
 }
 
 export default function ReleasesPage() {
@@ -44,8 +47,11 @@ export default function ReleasesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
+  const [releaseToDelete, setReleaseToDelete] = useState<Release | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const deleteCancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fetchReleases();
@@ -154,6 +160,7 @@ export default function ReleasesPage() {
                     <Th>Name</Th>
                     <Th>Runtime Version</Th>
                     <Th>Platform</Th>
+                    <Th>Downloads</Th>
                     <Th>Commit Hash</Th>
                     <Th>Commit Message</Th>
                     <Th>Timestamp (UTC)</Th>
@@ -178,6 +185,7 @@ export default function ReleasesPage() {
                           {release.platform.toUpperCase()}
                         </Tag>
                       </Td>
+                      <Td>{release.downloadCount ?? '-'}</Td>
                       <Td>
                         <Tooltip label={release.commitHash}>
                           <Text isTruncated w="10rem">
@@ -197,89 +205,39 @@ export default function ReleasesPage() {
                       </Td>
                       <Td>{formatFileSize(release.size)}</Td>
                       <Td justifyItems="center">
-                        {activeReleases.has(release.path) ? (
-                          <Tag size="lg" colorScheme="green">
-                            Active Release
-                          </Tag>
-                        ) : (
-                          <Button
-                            variant="solid"
-                            colorScheme="orange"
-                            size="sm"
-                            onClick={async () => {
-                              setIsOpen(true);
-                              setSelectedRelease(release);
-                            }}>
-                            <AlertDialog
-                              isOpen={isOpen}
-                              leastDestructiveRef={cancelRef}
-                              onClose={() => setIsOpen(false)}
-                              isCentered>
-                              <AlertDialogOverlay>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                                    Rollback Release
-                                  </AlertDialogHeader>
-
-                                  <AlertDialogBody>
-                                    Are you sure you want to rollback to this release?
-                                    <Tag
-                                      size="lg"
-                                      colorScheme="green"
-                                      mt={4}
-                                      padding={4}
-                                      className="w-full">
-                                      <Text fontSize="sm">
-                                        Commit Hash: {selectedRelease?.commitHash}
-                                      </Text>
-                                    </Tag>
-                                    <Tag size="lg" colorScheme="orange" mt={4} padding={4}>
-                                      <Text fontSize="sm">
-                                        This will promote this release to be the active release with
-                                        a new timestamp.
-                                      </Text>
-                                    </Tag>
-                                  </AlertDialogBody>
-
-                                  <AlertDialogFooter>
-                                    <Button ref={cancelRef} onClick={() => setIsOpen(false)}>
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      colorScheme="red"
-                                      onClick={async () => {
-                                        const response = await fetch('/api/rollback', {
-                                          method: 'POST',
-                                          headers: {
-                                            'Content-Type': 'application/json',
-                                          },
-                                          body: JSON.stringify({
-                                            path: selectedRelease?.path,
-                                            runtimeVersion: selectedRelease?.runtimeVersion,
-                                            platform: selectedRelease?.platform,
-                                            commitHash: selectedRelease?.commitHash,
-                                            commitMessage: selectedRelease?.commitMessage,
-                                          }),
-                                        });
-
-                                        if (!response.ok) {
-                                          throw new Error('Rollback failed');
-                                        }
-
-                                        showToast('Rollback successful', 'success');
-                                        fetchReleases();
-                                        setIsOpen(false);
-                                      }}
-                                      ml={3}>
-                                      Rollback
-                                    </Button>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialogOverlay>
-                            </AlertDialog>
-                            Rollback to this release
-                          </Button>
-                        )}
+                        <HStack spacing={2} wrap="wrap">
+                          {activeReleases.has(release.path) ? (
+                            <Tag size="lg" colorScheme="green">
+                              Active Release
+                            </Tag>
+                          ) : (
+                            <Button
+                              variant="solid"
+                              colorScheme="orange"
+                              size="sm"
+                              onClick={() => {
+                                setIsOpen(true);
+                                setSelectedRelease(release);
+                              }}>
+                              Rollback to this release
+                            </Button>
+                          )}
+                          {release.id && (
+                            <Tooltip label="Delete this update">
+                              <IconButton
+                                aria-label="Delete release"
+                                icon={<MdDelete />}
+                                size="sm"
+                                colorScheme="red"
+                                variant="outline"
+                                onClick={() => {
+                                  setReleaseToDelete(release);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                        </HStack>
                       </Td>
                     </Tr>
                   ))}
@@ -287,6 +245,117 @@ export default function ReleasesPage() {
               </Table>
             )}
           </Flex>
+
+          <AlertDialog
+            isOpen={isOpen}
+            leastDestructiveRef={cancelRef}
+            onClose={() => setIsOpen(false)}
+            isCentered>
+            <AlertDialogOverlay>
+              <AlertDialogContent>
+                <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                  Rollback Release
+                </AlertDialogHeader>
+                <AlertDialogBody>
+                  Are you sure you want to rollback to this release?
+                  <Tag
+                    size="lg"
+                    colorScheme="green"
+                    mt={4}
+                    padding={4}
+                    className="w-full">
+                    <Text fontSize="sm">Commit Hash: {selectedRelease?.commitHash}</Text>
+                  </Tag>
+                  <Tag size="lg" colorScheme="orange" mt={4} padding={4}>
+                    <Text fontSize="sm">
+                      This will promote this release to be the active release with a new timestamp.
+                    </Text>
+                  </Tag>
+                </AlertDialogBody>
+                <AlertDialogFooter>
+                  <Button ref={cancelRef} onClick={() => setIsOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="red"
+                    onClick={async () => {
+                      if (!selectedRelease) return;
+                      const response = await fetch('/api/rollback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          path: selectedRelease.path,
+                          runtimeVersion: selectedRelease.runtimeVersion,
+                          platform: selectedRelease.platform,
+                          commitHash: selectedRelease.commitHash,
+                          commitMessage: selectedRelease.commitMessage,
+                        }),
+                      });
+                      if (!response.ok) throw new Error('Rollback failed');
+                      showToast('Rollback successful', 'success');
+                      fetchReleases();
+                      setIsOpen(false);
+                    }}
+                    ml={3}>
+                    Rollback
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogOverlay>
+          </AlertDialog>
+
+          <AlertDialog
+            isOpen={deleteDialogOpen}
+            leastDestructiveRef={deleteCancelRef}
+            onClose={() => setDeleteDialogOpen(false)}
+            isCentered>
+            <AlertDialogOverlay>
+              <AlertDialogContent>
+                <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                  Delete Update
+                </AlertDialogHeader>
+                <AlertDialogBody>
+                  Are you sure you want to delete this update? This will remove the release from
+                  storage and the database. Download tracking for this release will also be removed.
+                  <Tag size="lg" colorScheme="red" mt={4} padding={4} className="w-full">
+                    <Text fontSize="sm" noOfLines={2}>
+                      {releaseToDelete?.path}
+                    </Text>
+                  </Tag>
+                </AlertDialogBody>
+                <AlertDialogFooter>
+                  <Button ref={deleteCancelRef} onClick={() => setDeleteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="red"
+                    onClick={async () => {
+                      if (!releaseToDelete?.path) return;
+                      try {
+                        const response = await fetch('/api/releases', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ path: releaseToDelete.path }),
+                        });
+                        if (!response.ok) {
+                          const err = await response.json();
+                          throw new Error(err.error ?? 'Delete failed');
+                        }
+                        showToast('Update deleted successfully', 'success');
+                        fetchReleases();
+                        setDeleteDialogOpen(false);
+                        setReleaseToDelete(null);
+                      } catch (err) {
+                        showToast(err instanceof Error ? err.message : 'Delete failed', 'error');
+                      }
+                    }}
+                    ml={3}>
+                    Delete
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogOverlay>
+          </AlertDialog>
         </Box>
       </Layout>
     </ProtectedRoute>

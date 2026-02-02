@@ -37,10 +37,14 @@ describe('Releases API', () => {
     const mockDatabase = {
       listReleases: jest.fn().mockResolvedValue([
         {
+          id: 'release-uuid-1',
           path: 'updates/1.0.0/ios/update.zip',
           commitHash: 'abc123',
           commitMessage: 'Test commit',
         },
+      ]),
+      getPerReleaseDownloadCounts: jest.fn().mockResolvedValue([
+        { releaseId: 'release-uuid-1', count: 5 },
       ]),
     };
 

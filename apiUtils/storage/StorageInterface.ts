@@ -12,4 +12,5 @@ export interface StorageInterface {
   >;
   listDirectories(directory: string): Promise<string[]>;
   copyFile(sourcePath: string, destinationPath: string): Promise<void>;
+  deleteFile(path: string): Promise<void>;
 }

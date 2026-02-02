@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { DatabaseInterface, Release, Tracking, TrackingMetrics } from './DatabaseInterface';
+import {
+  DatabaseInterface,
+  Release,
+  ReleaseDownloadCount,
+  Tracking,
+  TrackingMetrics,
+} from './DatabaseInterface';
 import { Tables } from './DatabaseFactory';
 
 export class SupabaseDatabase implements DatabaseInterface {
@@ -212,5 +218,25 @@ export class SupabaseDatabase implements DatabaseInterface {
       commitMessage: release.commit_message,
       updateId: release.update_id,
     }));
+  }
+
+  async deleteRelease(id: string): Promise<void> {
+    const { error } = await this.supabase.from(Tables.RELEASES).delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  async getPerReleaseDownloadCounts(): Promise<ReleaseDownloadCount[]> {
+    const { data, error } = await this.supabase
+      .from(Tables.RELEASES_TRACKING)
+      .select('release_id');
+
+    if (error) throw new Error(error.message);
+
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+      const id = row.release_id;
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).map(([releaseId, count]) => ({ releaseId, count }));
   }
 }

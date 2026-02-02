@@ -11,6 +11,8 @@ export default function Dashboard() {
   const [iosDownloads, setIosDownloads] = useState(0);
   const [androidDownloads, setAndroidDownloads] = useState(0);
   const [totalReleases, setTotalReleases] = useState(0);
+  const [latestIosDownloads, setLatestIosDownloads] = useState(0);
+  const [latestAndroidDownloads, setLatestAndroidDownloads] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const fetchData = async () => {
     try {
@@ -27,6 +29,9 @@ export default function Dashboard() {
       setIosDownloads(iosData.reduce((acc, curr) => acc + curr.count, 0));
       setAndroidDownloads(androidData.reduce((acc, curr) => acc + curr.count, 0));
       setTotalReleases(data.totalReleases);
+      const byPlatform = data.latestReleaseDownloadsByPlatform ?? { ios: 0, android: 0 };
+      setLatestIosDownloads(byPlatform.ios);
+      setLatestAndroidDownloads(byPlatform.android);
     } catch (error) {
       console.error('Failed to fetch tracking data:', error);
     } finally {
@@ -52,6 +57,24 @@ export default function Dashboard() {
             </CardHeader>
             <CardBody textAlign="center">
               <Heading size="lg">{totalReleases}</Heading>
+            </CardBody>
+          </Card>
+
+          <Card bg="primary.500" textColor="white" variant="outline">
+            <CardHeader textAlign="center">
+              <Heading size="md">Most Recent iOS Update Downloads</Heading>
+            </CardHeader>
+            <CardBody textAlign="center">
+              <Heading size="lg">{latestIosDownloads}</Heading>
+            </CardBody>
+          </Card>
+
+          <Card bg="primary.500" textColor="white" variant="outline">
+            <CardHeader textAlign="center">
+              <Heading size="md">Most Recent Android Update Downloads</Heading>
+            </CardHeader>
+            <CardBody textAlign="center">
+              <Heading size="lg">{latestAndroidDownloads}</Heading>
             </CardBody>
           </Card>
 
