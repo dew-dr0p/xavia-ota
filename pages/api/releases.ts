@@ -65,7 +65,8 @@ export default async function releasesHandler(req: NextApiRequest, res: NextApiR
             path: release?.path || `${folderPath}/${file.name}`,
             runtimeVersion,
             platform,
-            timestamp: file.created_at,
+            // FIX: Use database timestamp instead of storage file timestamp
+            timestamp: release?.timestamp || file.created_at,
             size: file.metadata.size,
             commitHash,
             commitMessage: release?.commitMessage,
