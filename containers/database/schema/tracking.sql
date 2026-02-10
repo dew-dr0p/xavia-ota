@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS releases_tracking (
     release_id UUID NOT NULL REFERENCES releases(id),
     download_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     platform VARCHAR(50) NOT NULL,
-    CONSTRAINT fk_release
+    CONSTRAINT releases_tracking_release_id_fkey
         FOREIGN KEY(release_id) 
         REFERENCES releases(id)
         ON DELETE CASCADE

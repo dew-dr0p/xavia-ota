@@ -73,10 +73,9 @@ describe('Releases API DELETE', () => {
     expect(mockDatabase.deleteRelease).toHaveBeenCalledWith('release-uuid');
   });
 
-  it('should succeed when file does not exist in storage', async () => {
+  it('should still delete DB release when storage delete fails', async () => {
     const mockStorage = {
-      fileExists: jest.fn().mockResolvedValue(false),
-      deleteFile: jest.fn(),
+      deleteFile: jest.fn().mockRejectedValue(new Error('not found')),
     };
     const mockDatabase = {
       getReleaseByPath: jest.fn().mockResolvedValue({
@@ -95,7 +94,7 @@ describe('Releases API DELETE', () => {
     await releasesHandler(req, res);
 
     expect(res._getStatusCode()).toBe(200);
-    expect(mockStorage.deleteFile).not.toHaveBeenCalled();
+    expect(mockStorage.deleteFile).toHaveBeenCalledWith('updates/1.0.0/ios/update.zip');
     expect(mockDatabase.deleteRelease).toHaveBeenCalledWith('release-uuid');
   });
 });

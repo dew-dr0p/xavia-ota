@@ -21,9 +21,13 @@ export default async function releasesHandler(req: NextApiRequest, res: NextApiR
         res.status(404).json({ error: 'Release not found' });
         return;
       }
+
       const storage = StorageFactory.getStorage();
-      if (await storage.fileExists(releasePath)) {
+      try {
+        // Always attempt to delete the file; ignore \"not found\" errors in storage backends.
         await storage.deleteFile(releasePath);
+      } catch (err) {
+        console.warn('Failed to delete release file from storage', { releasePath, err });
       }
       await database.deleteRelease(release.id);
       res.status(200).json({ success: true });

@@ -96,7 +96,14 @@ export class LocalStorage implements StorageInterface {
 
   async deleteFile(filePath: string): Promise<void> {
     const fullPath = path.join(this.baseDir, filePath);
-    await fs.unlink(fullPath);
+    try {
+      await fs.unlink(fullPath);
+    } catch (error: any) {
+      // If the file does not exist, treat it as already deleted for idempotency.
+      if (error && error.code !== 'ENOENT') {
+        throw error;
+      }
+    }
   }
 
   private getMimeType(ext: string): string {
