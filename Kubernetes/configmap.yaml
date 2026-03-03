@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xavia-ota-config
+  namespace: xavia-ota
+data:
+  HOST: "https://ota.your-domain.com"
+  DB_TYPE: "postgres"
+  BLOB_STORAGE_TYPE: "s3"  # R2 is S3-compatible
+  S3_REGION: "auto" # R2 uses "auto" for region
