@@ -8,3 +8,4 @@ data:
   DB_TYPE: "postgres"
   BLOB_STORAGE_TYPE: "s3"  # R2 is S3-compatible
   S3_REGION: "auto" # R2 uses "auto" for region
+  S3_ENDPOINT: "https://$(R2_ACCOUNT_ID).r2.cloudflarestorage.com"

@@ -91,7 +91,10 @@ spec:
               name: xavia-ota-secrets
               key: PRIVATE_KEY_BASE_64
         - name: S3_ENDPOINT
-          value: "https://$(R2_ACCOUNT_ID).r2.cloudflarestorage.com"
+          valueFrom:
+            configMapKeyRef:
+              name: xavia-ota-config
+              key: S3_ENDPOINT
         resources:
           requests:
             memory: "512Mi"
