@@ -1,6 +1,5 @@
 import mime from 'mime';
 import { NextApiRequest, NextApiResponse } from 'next';
-import nullthrows from 'nullthrows';
 
 import { UpdateHelper } from '../../apiUtils/helpers/UpdateHelper';
 import { ZipHelper } from '../../apiUtils/helpers/ZipHelper';
@@ -38,23 +37,26 @@ export default async function assetsEndpoint(req: NextApiRequest, res: NextApiRe
       runtimeVersion: runtimeVersion as string,
     });
 
-    const assetMetadata = metadataJson.fileMetadata[platform].assets.find(
+    const isLaunchAsset = metadataJson.fileMetadata[platform].bundle === assetPath;
+    const assetMetadata = metadataJson.fileMetadata[platform].assets?.find(
       (asset: any) => asset.path === assetPath
     );
-    const isLaunchAsset = metadataJson.fileMetadata[platform].bundle === assetPath;
 
     const asset = await ZipHelper.getFileFromZip(zip, assetPath as string);
 
+    // Resolve MIME type with a safe fallback
+    const ext = assetMetadata?.ext || assetPath.split('.').pop() || '';
+    const contentType = isLaunchAsset
+      ? 'application/javascript'
+      : mime.getType(ext) || 'application/octet-stream';
+
     res.statusCode = 200;
-    res.setHeader(
-      'content-type',
-      isLaunchAsset ? 'application/javascript' : nullthrows(mime.getType(assetMetadata.ext))
-    );
+    res.setHeader('content-type', contentType);
     res.end(asset);
   } catch (error) {
     console.error(error);
     res.statusCode = 500;
-    res.json({ error });
+    res.json({ error: (error as Error).message });
   }
 }
 
